@@ -1,11 +1,59 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import Header from "./Header";
+import { ValidateForm } from "../utils/Validate";
+import { auth } from "../utils/firebaseConfig";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 
 const Login = () => {
   const [isSignIn, setIsSignInForm] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const email = useRef(null);
+  const password = useRef(null);
   const toogleSignInForm = () => {
     console.log("hhg");
     setIsSignInForm(!isSignIn);
+  };
+
+  const validate = () => {
+    const message = ValidateForm(email.current.value, password.current.value);
+    setErrorMessage(message);
+    if (message) return;
+    if (!isSignIn) {
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+          console.log(user);
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          setErrorMessage(errorCode + " " + errorMessage);
+        });
+    } else {
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          const user = userCredential.user;
+          console.log(user);
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          setErrorMessage(errorCode + " " + errorMessage);
+          console.log(errorCode + " " + errorMessage);
+        });
+    }
   };
   return (
     <div>
@@ -25,18 +73,25 @@ const Login = () => {
           ></input>
         )}
         <input
+          ref={email}
           type="text"
           placeholder="Email Address"
           className="p-2 my-2 w-full bg-gray-700 rounded-md"
         ></input>
         <input
+          ref={password}
           type="password"
           placeholder="Password"
           className="p-2 my-2 w-full bg-gray-700 rounded-md"
         ></input>
-        <button type="button" className="rounded-md p-2 my-2 w-full bg-red-700">
+        <button
+          type="button"
+          className="rounded-md p-2 my-2 w-full bg-red-700"
+          onClick={validate}
+        >
           {isSignIn ? "Sign In" : "Sign Up"}
         </button>
+        <p className="text-red-500 font-bold">{errorMessage}</p>
         <p
           className="font-bold py-4 my-2 text-sm cursor-pointer"
           onClick={toogleSignInForm}
